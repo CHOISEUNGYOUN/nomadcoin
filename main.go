@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/choiseungyoun/nomadcoin/cli"
-	"github.com/choiseungyoun/nomadcoin/db"
+	"github.com/choiseungyoun/nomadcoin/wallet"
 )
 
 func main() {
-	defer db.Close()
-	cli.Start()
+	// defer db.Close()
+	// cli.Start()
+	wallet.Start()
 }
