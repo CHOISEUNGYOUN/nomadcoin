@@ -1,37 +1,53 @@
 package wallet
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/x509"
-	"encoding/hex"
-	"fmt"
-	"math/big"
+	"os"
 
 	"github.com/choiseungyoun/nomadcoin/utils"
 )
 
 const (
-	signature     string 
-	privateKey    string 
-	hashedMessage string 
+	fileName string = "nomadcoin.wallet"
 )
 
-func Start() {
+type wallet struct {
+	privateKey *ecdsa.PrivateKey
+}
 
-	privBytes, err := hex.DecodeString(privateKey)
+var w *wallet
+
+func hasWalletFile() bool {
+	_, err := os.Stat(fileName)
+	return !os.IsNotExist(err)
+}
+
+func createPrivKey() *ecdsa.PrivateKey {
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	utils.HandleErr(err)
+	return privKey
+}
 
-	_, err = x509.ParseECPrivateKey(privBytes)
+func persistKey(key *ecdsa.PrivateKey) {
+	bytes, err := x509.MarshalECPrivateKey(key)
 	utils.HandleErr(err)
+	err = os.WriteFile(fileName, bytes, 0644)
+	utils.HandleErr(err)
+}
 
-	sigBytes, err := hex.DecodeString(signature)
-	rBytes := sigBytes[:len(sigBytes)/2]
-	sBytes := sigBytes[len(sigBytes)/2:]
-
-	var bigR, bigS = big.Int{}, big.Int{}
-
-	bigR.SetBytes(rBytes)
-	bigS.SetBytes(sBytes)
-
-	fmt.Println(bigR)
-	fmt.Println(bigS)
+func Wallet() *wallet {
+	if w == nil {
+		w = &wallet{}
+		if hasWalletFile() {
+			// restore wallet
+		} else {
+			key := createPrivKey()
+			persistKey(key)
+			w.privateKey = key
+		}
+	}
+	return w
 }
