@@ -37,9 +37,9 @@ type TxOut struct {
 }
 
 type UTxOut struct {
-	TxID   string
-	Index  int
-	Amount int
+	TxID   string `json:"tx_id"`
+	Index  int    `json:"index"`
+	Amount int    `json:"amount"`
 }
 
 func (t *Tx) getId() {
