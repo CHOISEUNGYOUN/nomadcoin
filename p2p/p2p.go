@@ -19,6 +19,7 @@ func Upgrade(rw http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(rw, r, nil)
 	utils.HandleErr(err)
 	initPeer(conn, ip, open_port)
+
 }
 
 func AddPeer(address, port, open_port string) {
