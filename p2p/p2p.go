@@ -25,5 +25,6 @@ func Upgrade(rw http.ResponseWriter, r *http.Request) {
 func AddPeer(address, port, open_port string) {
 	conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:%s/ws?open_port=%s", address, port, open_port[1:]), nil)
 	utils.HandleErr(err)
-	initPeer(conn, address, port)
+	p := initPeer(conn, address, port)
+	sendNewestBlock(p)
 }
