@@ -1,6 +1,8 @@
 package blockchain
 
 import (
+	"encoding/json"
+	"net/http"
 	"sync"
 
 	"github.com/choiseungyoun/nomadcoin/db"
@@ -18,6 +20,7 @@ type blockchain struct {
 	NewestHash        string `json:"newest_hash"`
 	Height            int    `json:"height"`
 	CurrentDifficulty int    `json:"current_difficulty"`
+	m                 sync.Mutex
 }
 
 var b *blockchain
@@ -27,12 +30,13 @@ func (b *blockchain) restore(data []byte) {
 	utils.FromBytes(b, data)
 }
 
-func (b *blockchain) AddBlock() {
+func (b *blockchain) AddBlock() *Block {
 	block := createBlock(b.NewestHash, b.Height+1, getDifficulty(b))
 	b.NewestHash = block.Hash
 	b.Height = block.Height
 	b.CurrentDifficulty = block.Difficulty
 	persistBlockchain(b)
+	return block
 }
 
 func persistBlockchain(b *blockchain) {
@@ -40,6 +44,8 @@ func persistBlockchain(b *blockchain) {
 }
 
 func Blocks(b *blockchain) []*Block {
+	b.m.Lock()
+	defer b.m.Unlock()
 	var blocks []*Block
 	hashCursor := b.NewestHash
 	for {
@@ -148,7 +154,15 @@ func Blockchain() *blockchain {
 	return b
 }
 
+func Status(b *blockchain, rw http.ResponseWriter) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	utils.HandleErr(json.NewEncoder(rw).Encode(b))
+}
+
 func (b *blockchain) Replace(newBlocks []*Block) {
+	b.m.Lock()
+	defer b.m.Unlock()
 	b.CurrentDifficulty = newBlocks[0].Difficulty
 	b.Height = len(newBlocks)
 	b.NewestHash = newBlocks[0].Hash
@@ -157,4 +171,17 @@ func (b *blockchain) Replace(newBlocks []*Block) {
 	for _, block := range newBlocks {
 		persistBlock(block)
 	}
+}
+
+func (b *blockchain) AddPeerBlock(block *Block) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	b.Height += 1
+	b.CurrentDifficulty = block.Difficulty
+	b.NewestHash = block.Hash
+
+	persistBlockchain(b)
+	persistBlock(block)
+
+	// mempool
 }
