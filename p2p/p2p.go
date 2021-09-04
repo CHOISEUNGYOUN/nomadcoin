@@ -24,11 +24,15 @@ func Upgrade(rw http.ResponseWriter, r *http.Request) {
 
 }
 
-func AddPeer(address, port, open_port string) {
+func AddPeer(address, port, open_port string, broadcast bool) {
 	fmt.Printf("%s to connect to port %s\n", open_port, port)
-	conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:%s/ws?open_port=%s", address, port, open_port[1:]), nil)
+	conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s:%s/ws?open_port=%s", address, port, open_port), nil)
 	utils.HandleErr(err)
 	p := initPeer(conn, address, port)
+	if broadcast {
+		broadcaseNewPeer(p)
+		return
+	}
 	sendNewestBlock(p)
 }
 
@@ -41,5 +45,14 @@ func BroadcastNewBlock(b *blockchain.Block) {
 func BroadcastNewTx(tx *blockchain.Tx) {
 	for _, p := range Peers.v {
 		notifyNewTx(tx, p)
+	}
+}
+
+func broadcaseNewPeer(newPeer *peer) {
+	for key, p := range Peers.v {
+		if key != newPeer.key {
+			payload := fmt.Sprintf("%s:%s", newPeer.key, p.port)
+			notifyNewPeer(payload, p)
+		}
 	}
 }
