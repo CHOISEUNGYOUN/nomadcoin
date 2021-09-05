@@ -13,4 +13,5 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
+	golang.org/x/tools v0.1.5 // indirect
 )
