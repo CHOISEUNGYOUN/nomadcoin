@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/choiseungyoun/nomadcoin/db"
 	"github.com/choiseungyoun/nomadcoin/utils"
 )
 
@@ -20,7 +19,7 @@ type Block struct {
 }
 
 func persistBlock(b *Block) {
-	db.SaveBlock(b.Hash, utils.ToBytes(b))
+	dbStorage.SaveBlock(b.Hash, utils.ToBytes(b))
 }
 
 var ErrNotFound = errors.New("block not found")
@@ -44,7 +43,7 @@ func (b *Block) mine() {
 }
 
 func FindBlock(hash string) (*Block, error) {
-	blockBytes := db.Block(hash)
+	blockBytes := dbStorage.FindBlock(hash)
 	if blockBytes == nil {
 		return nil, ErrNotFound
 	}
@@ -61,8 +60,8 @@ func createBlock(prevHash string, height int, diff int) *Block {
 		Difficulty: diff,
 		Nonce:      0,
 	}
-	block.mine()
 	block.Transactions = Mempool().TxToConfirm()
+	block.mine()
 	persistBlock(block)
 	return block
 }
